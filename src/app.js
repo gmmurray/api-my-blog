@@ -17,11 +17,4 @@ const startServer = async () => {
 	});
 }
 
-// Import routes
-//const authRoute = require('./routes/auth');
-
-// Route middleware
-//app.use('/api/auth', authRoute);
-
-
 startServer();
