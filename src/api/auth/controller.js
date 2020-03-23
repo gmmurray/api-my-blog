@@ -1,12 +1,12 @@
 const router = require('express').Router();
-// const bcrypt = require('bcryptjs');
+const bcrypt = require('bcryptjs');
 // const jwt = require('jsonwebtoken');
 
-// const User = require('../models/User');
+const User = require('../../models/User');
 // const { registerValidation, loginValidation } = require('../validation/users');
 
-// // Register
-// router.post('/register', async (req, res) => {
+// Register
+router.post('/register', async (req, res) => {
 // 	// Validate data
 // 	const error = await registerValidation(req.body);
 // 	if (error) {
@@ -18,21 +18,24 @@ const router = require('express').Router();
 // 		return res.status(400).json('Email already exists');
 // 	}
 
-// 	// Hash password
-// 	const salt = await bcrypt.genSalt(10);
-// 	const hashPassword = await bcrypt.hash(req.body.password, salt);
+// Hash password
+const salt = await bcrypt.genSalt(10);
+const hashPassword = await bcrypt.hash(req.body.password, salt);
 
-// 	const newUser = new User({
-// 		name: req.body.name,
-// 		email: req.body.email,
-// 		password: hashPassword,
-// 	});
+	const newUser = new User({
+		name: req.body.name,
+		email: req.body.email,
+		username: req.body.username,
+		avatar: req.body.avatar,
+		bio: req.body.bio,
+		password: hashPassword,
+	});
 
-// 	try {
-// 		const savedUser = await newUser.save();
-// 		res.status(200).json({ user: savedUser._id });
-// 	} catch (err) {}
-// });
+	try {
+		const savedUser = await newUser.save();
+		res.status(200).json({ user: savedUser._id });
+	} catch (err) {}
+});
 
 // // Login
 // router.post('/login', async (req, res) => {

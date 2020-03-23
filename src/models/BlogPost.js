@@ -30,10 +30,14 @@ const blogPostSchema = new mongoose.Schema({
 			required: true,
 			max: 160,
 		},
+		filename: {
+			type: String,
+			required: true,
+		},
 	},
 	author: {
 		id: {
-			type: ObjectId,
+			type: mongoose.ObjectId,
 			required: true,
 		},
 		name: {
@@ -54,11 +58,9 @@ const blogPostSchema = new mongoose.Schema({
 	published: {
 		type: Boolean,
 		required: true,
-		default: false,
 	},
 	dateCreated: {
 		type: Date,
-		required: true,
 		default: Date.now,
 	},
 	datePublished: {
