@@ -1,7 +1,6 @@
 const express = require('express');
 const loaders = require('./loaders');
 require('dotenv').config();
-const cors = require('cors');
 
 const startServer = async () => {
 	const app = express();

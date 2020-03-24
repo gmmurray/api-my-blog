@@ -14,7 +14,7 @@ router.get('/deletepic', async (req, res) => {
 });
 
 const BlogPost = require('../../models/BlogPost');
-const { postValidation } = require('./validation');
+const { postValidation, putValidation } = require('./validation');
 // GET api/blog-post/
 // Gets all blog posts
 router.get('/', (req, res) => {
@@ -89,79 +89,89 @@ router.delete('/:id', (req, res) => {
 
 // PUT api/blog-posts/id
 // Update multiple fields on blog post by given id
-router.put('/:id', multer().single('file'), async (req, res, next) => {
-	BlogPost.findById(req.params.id)
-		.then(async blogPost => {
-			if (blogPost) {
-				blogPost.title = req.body.title;
-				blogPost.intro = req.body.intro;
-				blogPost.content = req.body.content;
-				blogPost.image.description = req.body.image.description;
-				blogPost.image.alt = req.body.image.alt;
-				blogPost.category = req.body.category;
-				blogPost.published = req.body.published;
-				blogPost.dateCreated = Date.parse(req.body.dateCreated);
-				blogPost.datePublished = Date.parse(req.body.datePublished);
-                blogPost.lastModified = Date.now();
-                
-                // Check if file exists to be uploaded
-                if (req.file){
-                    const imageUrl = await uploadImagePromise(req.file, next);
+router.put(
+	'/:id',
+	multer().single('file'),
+	putValidation,
+	async (req, res, next) => {
+		BlogPost.findById(req.params.id)
+			.then(async blogPost => {
+				if (blogPost) {
+					blogPost.title = req.body.title;
+					blogPost.intro = req.body.intro;
+					blogPost.content = req.body.content;
+					blogPost.image.description = req.body.image.description;
+					blogPost.image.alt = req.body.image.alt;
+					blogPost.category = req.body.category;
+					blogPost.published = req.body.published;
+					blogPost.dateCreated = Date.parse(req.body.dateCreated);
+					blogPost.datePublished = Date.parse(req.body.datePublished);
+					blogPost.lastModified = Date.now();
 
-                    // Delete old image from bucket 
-                    const error = await deleteImage(blogPost.image.filename);
-                    
-                    // If there was an error deleting, don't do anything else
-                    if (error && error.errors[0].reason !== 'notFound') {
-                        res.status(400).json(error);
-                        return;
-                    }
+					// Check if file exists to be uploaded
+					if (req.file) {
+						const imageUrl = await uploadImagePromise(
+							req.file,
+							next,
+						);
 
-                    // Set new url and file name
-                    blogPost.image.url = imageUrl;
-                    blogPost.image.filename = req.file.originalname;
-                } 
+						// Delete old image from bucket
+						const error = await deleteImage(
+							blogPost.image.filename,
+						);
 
-				blogPost
-					.save()
-					.then(() => {
-						res.status(204).send();
-					})
-					.catch(err => res.status(400).json(err));
-				return;
-			} else {
-				const newBlogPost = new BlogPost({
-					title: req.body.title,
-					intro: req.body.intro,
-					content: req.body.content,
-					image: {
-						url: await uploadImagePromise(req.file, next),
-						description: req.body.image.description,
-						alt: req.body.image.alt,
-						filename: req.file.originalname,
-					},
-					author: {
-						// TODO: change to get from JWT
-						id: '5e77a5b67e90e82bdc1f2ff5',
-						name: 'John Johnson',
-						avatar:
-							'https://www.elegantthemes.com/blog/wp-content/uploads/2017/01/shutterstock_534491617-600.jpg',
-					},
-					category: req.body.category,
-					published: req.body.published,
-					dateCreated: Date.parse(req.body.dateCreated),
-					datePublished: Date.parse(req.body.datePublished),
-					lastModified: Date.now(),
-				});
-				newBlogPost
-					.save()
-					.then(() => {
-						res.status(201).json({ id: newBlogPost._id });
-					})
-					.catch(err => res.status(400).json(err));
-			}
-		})
-		.catch(err => res.status(400).json(err));
-});
+						// If there was an error deleting, don't do anything else
+						if (error && error.errors[0].reason !== 'notFound') {
+							res.status(400).json(error);
+							return;
+						}
+
+						// Set new url and file name
+						blogPost.image.url = imageUrl;
+						blogPost.image.filename = req.file.originalname;
+					}
+
+					blogPost
+						.save()
+						.then(() => {
+							res.status(204).send();
+						})
+						.catch(err => res.status(400).json(err));
+					return;
+				} else {
+					const newBlogPost = new BlogPost({
+						title: req.body.title,
+						intro: req.body.intro,
+						content: req.body.content,
+						image: {
+							url: await uploadImagePromise(req.file, next),
+							description: req.body.image.description,
+							alt: req.body.image.alt,
+							filename: req.file.originalname,
+						},
+						author: {
+							// TODO: change to get from JWT
+							id: '5e77a5b67e90e82bdc1f2ff5',
+							name: 'John Johnson',
+							avatar:
+								'https://www.elegantthemes.com/blog/wp-content/uploads/2017/01/shutterstock_534491617-600.jpg',
+						},
+						category: req.body.category,
+						published: req.body.published,
+						dateCreated: Date.parse(req.body.dateCreated),
+						datePublished: Date.parse(req.body.datePublished),
+						lastModified: Date.now(),
+					});
+					newBlogPost
+						.save()
+						.then(() => {
+							res.status(201).json({ id: newBlogPost._id });
+						})
+						.catch(err => res.status(400).json(err));
+				}
+			})
+			.catch(err => res.status(400).json(err));
+	},
+);
 
 module.exports = router;

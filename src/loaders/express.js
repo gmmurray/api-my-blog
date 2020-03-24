@@ -8,6 +8,19 @@ const expressLoader = async ({app}) => {
     // Use JSON
     app.use(express.json());
 
+    // Global authorization for deployed testing
+    if (process.env.DEV_ENVIRONMENT === 'deploy') {
+        app.use((req, res, next) => {
+            if(req.headers.admin === process.env.STREET_CRED){
+                next();
+                return;
+            } else {
+                res.status(400).send('Unauthorized access');
+                return;
+            }
+        });
+    }
+
     // Set up router
     app.use('/api', require('../api/'));
 }
