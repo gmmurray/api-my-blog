@@ -84,5 +84,37 @@ const putValidation = async (req, res, next) => {
 	next();
 };
 
+// Patch validation
+const patchValidation = async (req, res, next) => {
+	const schema = Joi.object({
+		title: Joi.string(),
+		intro: Joi.string().max(155),
+		content: Joi.string().max(10000),
+		image: {
+			description: Joi.string().max(160).allow(''),
+			alt: Joi.string().max(160),
+		},
+		category: Joi.string().max(16),
+		published: Joi.boolean(),
+		dateCreated: Joi.date(),
+		datePublished: Joi.date(),
+		lastModified: Joi.date(),
+	});
+
+	try {
+		await schema.validateAsync(req.body);
+	} catch (error) {
+		res.status(400).json({ error: error });
+		return;
+	}
+
+	if (req.fileTypeError) {
+		res.status(400).send({ error: req.fileTypeError });
+		return;
+	}
+	next();
+};
+
 module.exports.postValidation = postValidation;
 module.exports.putValidation = putValidation;
+module.exports.patchValidation = patchValidation;

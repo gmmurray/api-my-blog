@@ -14,11 +14,16 @@ router.get('/deletepic', async (req, res) => {
 });
 
 const BlogPost = require('../../models/BlogPost');
-const { postValidation, putValidation } = require('./validation');
+const {
+	postValidation,
+	putValidation,
+	patchValidation,
+} = require('./validation');
+
 // GET api/blog-post/
 // Gets all blog posts
 router.get('/', (req, res) => {
-	BlogPost.find()
+	BlogPost.find(req.query)
 		.then(blogPosts => res.json({ blogPosts: blogPosts }))
 		.catch(err => res.status(400).json({ error: err }));
 });
@@ -164,64 +169,79 @@ router.put('/:id', multer().single('file'), putValidation, (req, res, next) => {
 		.catch(err => res.status(400).json(err));
 });
 
-router.patch('/:id', multer().single('file'), (req, res, next) => {
-	BlogPost.findById(req.params.id)
-		.then(async blogPost => {
-			if (blogPost) {
-				for (let key in req.body) {
-					if (key in blogPost) {
-						switch (key) {
-							case '_id':
-								break;
-							case 'image': {
-								for (let nested in req.body[key]){
-									if (nested === 'url' || nested === 'filename'){
-										break;
-									} else {
-										blogPost[key][nested] = req.body[key][nested];
+router.patch(
+	'/:id',
+	multer().single('file'),
+	patchValidation,
+	(req, res, next) => {
+		BlogPost.findById(req.params.id)
+			.then(async blogPost => {
+				if (blogPost) {
+					for (let key in req.body) {
+						if (key in blogPost) {
+							switch (key) {
+								case 'author':
+								case '_id':
+									break;
+								case 'image': {
+									for (let nested in req.body[key]) {
+										if (
+											nested === 'url' ||
+											nested === 'filename'
+										) {
+											break;
+										} else {
+											blogPost[key][nested] =
+												req.body[key][nested];
+										}
 									}
+									break;
 								}
-								break;
+								default:
+									blogPost[key] = req.body[key];
+									break;
 							}
-							case 'author':
-								break;
-							default:
-								blogPost[key] = req.body[key];
-								break;
 						}
 					}
-				}
 
-				// Handle file upload
-				// Check if file exists to be uploaded
-				if (req.file) {
-					const imageUrl = await uploadImagePromise(req.file, next);
+					// Handle file upload
+					// Check if file exists to be uploaded
+					if (req.file) {
+						const imageUrl = await uploadImagePromise(
+							req.file,
+							next,
+						);
 
-					// Delete old image from bucket
-					const error = await deleteImage(blogPost.image.filename);
+						// Delete old image from bucket
+						const error = await deleteImage(
+							blogPost.image.filename,
+						);
 
-					// If there was an error deleting, don't do anything else
-					if (error && error.errors[0].reason !== 'notFound') {
-						res.status(400).json(error);
-						return;
+						// If there was an error deleting, don't do anything else
+						if (error && error.errors[0].reason !== 'notFound') {
+							res.status(400).json(error);
+							return;
+						}
+
+						// Set new url and file name
+						blogPost.image.url = imageUrl;
+						blogPost.image.filename = req.file.originalname;
 					}
 
-					// Set new url and file name
-					blogPost.image.url = imageUrl;
-					blogPost.image.filename = req.file.originalname;
+					blogPost
+						.save()
+						.then(() => {
+							res.status(200).send(blogPost);
+						})
+						.catch(err => res.status(400).json(err));
+				} else {
+					res.status(404).json({
+						error: 'Resource could not found.',
+					});
 				}
-
-				blogPost
-					.save()
-					.then(() => {
-						res.status(200).send(blogPost);
-					})
-					.catch(err => res.status(400).json(err));
-			} else {
-				res.status(404).json({ error: 'Resource could not found.' });
-			}
-		})
-		.catch(err => res.status(400).json(err));
-});
+			})
+			.catch(err => res.status(400).json(err));
+	},
+);
 
 module.exports = router;
