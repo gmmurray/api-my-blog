@@ -15,6 +15,8 @@ const {
 	patchValidation,
 } = require('./validation');
 
+const { postBlogPost, putUpdateBlogPost, putNewBlogPost } = require('./service');
+
 const { formatMongooseError } = require('../../services/errorResponses');
 
 // GET api/blog-post/
@@ -53,26 +55,7 @@ router.post(
 	async (req, res, next) => {
 		const imageUrl = await uploadImagePromise(req.file, next);
 
-		const newBlogPost = new BlogPost({
-			title: req.body.title,
-			intro: req.body.intro,
-			content: req.body.content,
-			image: {
-				url: imageUrl,
-				description: req.body.image.description,
-				alt: req.body.image.alt,
-				filename: req.file.originalname,
-			},
-			author: {
-				// TODO: change to get from JWT
-				id: '5e77a5b67e90e82bdc1f2ff5',
-				name: 'John Johnson',
-				avatar:
-					'https://www.elegantthemes.com/blog/wp-content/uploads/2017/01/shutterstock_534491617-600.jpg',
-			},
-			category: req.body.category,
-			published: req.body.published,
-		});
+		const newBlogPost = postBlogPost(req.body, req.file, imageUrl);
 
 		newBlogPost
 			.save()
@@ -95,16 +78,9 @@ router.put('/:id', multer().single('file'), putValidation, (req, res, next) => {
 	BlogPost.findById(req.params.id)
 		.then(async blogPost => {
 			if (blogPost) {
-				blogPost.title = req.body.title;
-				blogPost.intro = req.body.intro;
-				blogPost.content = req.body.content;
-				blogPost.image.description = req.body.image.description;
-				blogPost.image.alt = req.body.image.alt;
-				blogPost.category = req.body.category;
-				blogPost.published = req.body.published;
-				blogPost.dateCreated = Date.parse(req.body.dateCreated);
-				blogPost.datePublished = Date.parse(req.body.datePublished);
-				blogPost.lastModified = Date.now();
+
+				// Assign variables to document
+				putUpdateBlogPost(blogPost, req.body); 
 
 				// Check if file exists to be uploaded
 				if (req.file) {
@@ -132,29 +108,13 @@ router.put('/:id', multer().single('file'), putValidation, (req, res, next) => {
 					.catch(err => res.status(400).json(formatMongooseError(err)));
 				return;
 			} else {
-				const newBlogPost = new BlogPost({
-					title: req.body.title,
-					intro: req.body.intro,
-					content: req.body.content,
-					image: {
-						url: await uploadImagePromise(req.file, next),
-						description: req.body.image.description,
-						alt: req.body.image.alt,
-						filename: req.file.originalname,
-					},
-					author: {
-						// TODO: change to get from JWT
-						id: '5e77a5b67e90e82bdc1f2ff5',
-						name: 'John Johnson',
-						avatar:
-							'https://www.elegantthemes.com/blog/wp-content/uploads/2017/01/shutterstock_534491617-600.jpg',
-					},
-					category: req.body.category,
-					published: req.body.published,
-					dateCreated: Date.parse(req.body.dateCreated),
-					datePublished: Date.parse(req.body.datePublished),
-					lastModified: Date.now(),
-				});
+				if (!req.file) {
+					res.status(400).json({error: 'New blog post resource requires an image'});
+					return;
+				}
+
+				const newBlogPost = await putNewBlogPost(req.body, req.file, next);
+
 				newBlogPost
 					.save()
 					.then(() => {
