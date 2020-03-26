@@ -5,27 +5,24 @@ const {
 	uploadImagePromise,
 	deleteImage,
 } = require('../../services/googleCloud');
+
 const multer = require('../../services/multer');
-
-// tester to delete pictures from google
-router.get('/deletepic', async (req, res) => {
-	const error = await deleteImage('stick-walking.png');
-	error ? res.status(400).json(error) : res.status(204);
-});
-
 const BlogPost = require('../../models/BlogPost');
+
 const {
 	postValidation,
 	putValidation,
 	patchValidation,
 } = require('./validation');
 
+const { formatMongooseError } = require('../../services/errorResponses');
+
 // GET api/blog-post/
-// Gets all blog posts
+// Gets all blog posts with query string
 router.get('/', (req, res) => {
 	BlogPost.find(req.query)
 		.then(blogPosts => res.json({ blogPosts: blogPosts }))
-		.catch(err => res.status(400).json({ error: err }));
+		.catch(err => res.status(400).json(formatMongooseError(err)));
 });
 
 // GET api/blog-post/author/id
@@ -33,7 +30,7 @@ router.get('/', (req, res) => {
 router.get('/author/:id', (req, res) => {
 	BlogPost.find({ 'author.id': ObjectId(req.params.id) })
 		.then(blogPosts => res.json({ blogPosts: blogPosts }))
-		.catch(err => res.status(400).json({ error: err }));
+		.catch(err => res.status(400).json(formatMongooseError(err)));
 });
 
 // GET api/blog-posts/id
@@ -44,7 +41,7 @@ router.get('/:id', (req, res) => {
 			if (blogPost) res.json(blogPost);
 			else res.status(404).json('Resource not found.');
 		})
-		.catch(err => res.status(400).json({ error: err }));
+		.catch(err => res.status(400).json(formatMongooseError(err)));
 });
 
 // POST api/blog-posts/id
@@ -80,7 +77,7 @@ router.post(
 		newBlogPost
 			.save()
 			.then(() => res.status(201).json({ id: newBlogPost._id }))
-			.catch(err => res.status(400).json(err));
+			.catch(err => res.status(400).json(formatMongooseError(err)));
 	},
 );
 
@@ -89,7 +86,7 @@ router.post(
 router.delete('/:id', (req, res) => {
 	BlogPost.findByIdAndDelete(req.params.id)
 		.then(() => res.status(204).json('Resource deleted.'))
-		.catch(err => res.status(400).json(err));
+		.catch(err => res.status(400).json(formatMongooseError(err)));
 });
 
 // PUT api/blog-posts/id
@@ -132,7 +129,7 @@ router.put('/:id', multer().single('file'), putValidation, (req, res, next) => {
 					.then(() => {
 						res.status(204).send();
 					})
-					.catch(err => res.status(400).json(err));
+					.catch(err => res.status(400).json(formatMongooseError(err)));
 				return;
 			} else {
 				const newBlogPost = new BlogPost({
@@ -163,10 +160,10 @@ router.put('/:id', multer().single('file'), putValidation, (req, res, next) => {
 					.then(() => {
 						res.status(201).json({ id: newBlogPost._id });
 					})
-					.catch(err => res.status(400).json(err));
+					.catch(err => res.status(400).json(formatMongooseError(err)));
 			}
 		})
-		.catch(err => res.status(400).json(err));
+		.catch(err => res.status(400).json(formatMongooseError(err)));
 });
 
 router.patch(
@@ -233,14 +230,14 @@ router.patch(
 						.then(() => {
 							res.status(200).send(blogPost);
 						})
-						.catch(err => res.status(400).json(err));
+						.catch(err => res.status(400).json(formatMongooseError(err)));
 				} else {
 					res.status(404).json({
 						error: 'Resource could not found.',
 					});
 				}
 			})
-			.catch(err => res.status(400).json(err));
+			.catch(err => res.status(400).json(formatMongooseError(err)));
 	},
 );
 
