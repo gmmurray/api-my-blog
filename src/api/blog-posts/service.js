@@ -68,8 +68,8 @@ const putNewBlogPost = async (data, file, next) => {
 		dateCreated,
 		datePublished,
 	} = data;
-    const { description, alt } = data.image;
-    
+	const { description, alt } = data.image;
+
 	return new BlogPost({
 		title,
 		intro,
@@ -95,6 +95,34 @@ const putNewBlogPost = async (data, file, next) => {
 	});
 };
 
-module.exports.postBlogPost = postBlogPost;
-module.exports.putUpdateBlogPost = putUpdateBlogPost;
-module.exports.putNewBlogPost = putNewBlogPost;
+const mapBlogPostKeys = (updatedBlogPost, originalBlogPost) => {
+	for (let key in updatedBlogPost) {
+		if (key in originalBlogPost) {
+			switch (key) {
+				case 'author':
+				case '_id':
+					break;
+				case 'image': {
+					for (let nested in updatedBlogPost[key]) {
+						if (nested === 'url' || nested === 'filename') {
+							break;
+						} else {
+							originalBlogPost[key][nested] =
+								updatedBlogPost[key][nested];
+						}
+					}
+					break;
+				}
+				default:
+					originalBlogPost[key] = updatedBlogPost[key];
+					break;
+			}
+		}
+	}
+};
+module.exports = {
+	postBlogPost,
+	putUpdateBlogPost,
+	putNewBlogPost,
+	mapBlogPostKeys,
+};

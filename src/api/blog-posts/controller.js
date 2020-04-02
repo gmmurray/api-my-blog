@@ -15,7 +15,12 @@ const {
 	patchValidation,
 } = require('./validation');
 
-const { postBlogPost, putUpdateBlogPost, putNewBlogPost } = require('./service');
+const {
+	postBlogPost,
+	putUpdateBlogPost,
+	putNewBlogPost,
+	mapBlogPostKeys,
+} = require('./service');
 
 const { formatMongooseError } = require('../../services/errorResponses');
 
@@ -78,9 +83,8 @@ router.put('/:id', multer().single('file'), putValidation, (req, res, next) => {
 	BlogPost.findById(req.params.id)
 		.then(async blogPost => {
 			if (blogPost) {
-
 				// Assign variables to document
-				putUpdateBlogPost(blogPost, req.body); 
+				putUpdateBlogPost(blogPost, req.body);
 
 				// Check if file exists to be uploaded
 				if (req.file) {
@@ -105,27 +109,39 @@ router.put('/:id', multer().single('file'), putValidation, (req, res, next) => {
 					.then(() => {
 						res.status(204).send();
 					})
-					.catch(err => res.status(400).json(formatMongooseError(err)));
+					.catch(err =>
+						res.status(400).json(formatMongooseError(err)),
+					);
 				return;
 			} else {
 				if (!req.file) {
-					res.status(400).json({error: 'New blog post resource requires an image'});
+					res.status(400).json({
+						error: 'New blog post resource requires an image',
+					});
 					return;
 				}
 
-				const newBlogPost = await putNewBlogPost(req.body, req.file, next);
+				const newBlogPost = await putNewBlogPost(
+					req.body,
+					req.file,
+					next,
+				);
 
 				newBlogPost
 					.save()
 					.then(() => {
 						res.status(201).json({ id: newBlogPost._id });
 					})
-					.catch(err => res.status(400).json(formatMongooseError(err)));
+					.catch(err =>
+						res.status(400).json(formatMongooseError(err)),
+					);
 			}
 		})
 		.catch(err => res.status(400).json(formatMongooseError(err)));
 });
 
+// PATCH api/blog-posts/id
+// Update single or multiple properties of blog post by id.
 router.patch(
 	'/:id',
 	multer().single('file'),
@@ -134,32 +150,7 @@ router.patch(
 		BlogPost.findById(req.params.id)
 			.then(async blogPost => {
 				if (blogPost) {
-					for (let key in req.body) {
-						if (key in blogPost) {
-							switch (key) {
-								case 'author':
-								case '_id':
-									break;
-								case 'image': {
-									for (let nested in req.body[key]) {
-										if (
-											nested === 'url' ||
-											nested === 'filename'
-										) {
-											break;
-										} else {
-											blogPost[key][nested] =
-												req.body[key][nested];
-										}
-									}
-									break;
-								}
-								default:
-									blogPost[key] = req.body[key];
-									break;
-							}
-						}
-					}
+					mapBlogPostKeys(req.body, blogPost);
 
 					// Handle file upload
 					// Check if file exists to be uploaded
@@ -190,7 +181,9 @@ router.patch(
 						.then(() => {
 							res.status(200).send(blogPost);
 						})
-						.catch(err => res.status(400).json(formatMongooseError(err)));
+						.catch(err =>
+							res.status(400).json(formatMongooseError(err)),
+						);
 				} else {
 					res.status(404).json({
 						error: 'Resource could not found.',

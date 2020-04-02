@@ -9,7 +9,7 @@ const expressLoader = async ({app}) => {
     app.use(express.json());
 
     // Global authorization for deployed testing
-    if (process.env.DEV_ENVIRONMENT === 'deploy') {
+    if (process.env.NODE_ENV === 'production') {
         app.use((req, res, next) => {
             if(req.headers.admin === process.env.STREET_CRED){
                 next();
