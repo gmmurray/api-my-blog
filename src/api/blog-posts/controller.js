@@ -73,7 +73,7 @@ router.post(
 // Delete blog post by given id
 router.delete('/:id', (req, res) => {
 	BlogPost.findByIdAndDelete(req.params.id)
-		.then(() => res.status(204).json('Resource deleted.'))
+		.then(() => res.status(204).send())
 		.catch(err => res.status(400).json(formatMongooseError(err)));
 });
 
@@ -179,7 +179,7 @@ router.patch(
 					blogPost
 						.save()
 						.then(() => {
-							res.status(200).send(blogPost);
+							res.status(200).json(blogPost);
 						})
 						.catch(err =>
 							res.status(400).json(formatMongooseError(err)),

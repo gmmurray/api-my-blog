@@ -38,24 +38,19 @@ const putUpdateBlogPost = (blogPost, data) => {
 		published,
 		dateCreated,
 		datePublished,
+		image,
 	} = data;
 
-	const { description, alt } = data.image;
-
-	blogPost = {
-		title,
-		intro,
-		content,
-		category,
-		published,
-		image: {
-			description,
-			alt,
-		},
-		dateCreated: Date.parse(dateCreated),
-		datePublished: Date.parse(datePublished),
-		lastModified: Date.now(),
-	};
+	blogPost.title = title;
+	blogPost.intro = intro;
+	blogPost.content = content;
+	blogPost.category = category;
+	blogPost.published = published;
+	blogPost.image.description = image.description;
+	blogPost.image.alt = image.alt;
+	blogPost.dateCreated = Date.parse(dateCreated);
+	blogPost.datePublished = Date.parse(datePublished);
+	blogPost.lastModified = Date.now();
 };
 
 const putNewBlogPost = async (data, file, next) => {
