@@ -28,27 +28,27 @@ const { formatMongooseError } = require('../../services/errorResponses');
 // Gets all blog posts with query string
 router.get('/', (req, res) => {
 	BlogPost.find(req.query)
-		.then(blogPosts => res.json({ blogPosts: blogPosts }))
-		.catch(err => res.status(400).json(formatMongooseError(err)));
+		.then((blogPosts) => res.json({ blogPosts: blogPosts }))
+		.catch((err) => res.status(400).json(formatMongooseError(err)));
 });
 
 // GET api/blog-post/author/id
 // Gets all blog posts by given author id
 router.get('/author/:id', (req, res) => {
 	BlogPost.find({ 'author.id': ObjectId(req.params.id) })
-		.then(blogPosts => res.json({ blogPosts: blogPosts }))
-		.catch(err => res.status(400).json(formatMongooseError(err)));
+		.then((blogPosts) => res.json({ blogPosts: blogPosts }))
+		.catch((err) => res.status(400).json(formatMongooseError(err)));
 });
 
 // GET api/blog-posts/id
 // Get blog post by given blog post id
 router.get('/:id', (req, res) => {
 	BlogPost.findById(req.params.id)
-		.then(blogPost => {
+		.then((blogPost) => {
 			if (blogPost) res.json(blogPost);
 			else res.status(404).json('Resource not found.');
 		})
-		.catch(err => res.status(400).json(formatMongooseError(err)));
+		.catch((err) => res.status(400).json(formatMongooseError(err)));
 });
 
 // POST api/blog-posts/id
@@ -65,23 +65,35 @@ router.post(
 		newBlogPost
 			.save()
 			.then(() => res.status(201).json({ id: newBlogPost._id }))
-			.catch(err => res.status(400).json(formatMongooseError(err)));
+			.catch((err) => res.status(400).json(formatMongooseError(err)));
 	},
 );
 
 // DELETE api/blog-posts/id
 // Delete blog post by given id
 router.delete('/:id', (req, res) => {
-	BlogPost.findByIdAndDelete(req.params.id)
-		.then(() => res.status(204).send())
-		.catch(err => res.status(400).json(formatMongooseError(err)));
+	BlogPost.findById(req.params.id)
+		.then(async (blogPost) => {
+			const error = await deleteImage(blogPost.image.filename);
+
+			// If there was an error deleting, don't do anything else
+			if (error && error.errors[0].reason !== 'notFound') {
+				res.status(400).json(error);
+				return;
+			}
+
+			BlogPost.findByIdAndDelete(req.params.id)
+				.then(() => res.status(204).send())
+				.catch((err) => res.status(400).json(formatMongooseError(err)));
+		})
+		.catch((err) => res.status(400).json(formatMongooseError(err)));
 });
 
 // PUT api/blog-posts/id
 // Update multiple fields on blog post by given id
 router.put('/:id', multer().single('file'), putValidation, (req, res, next) => {
 	BlogPost.findById(req.params.id)
-		.then(async blogPost => {
+		.then(async (blogPost) => {
 			if (blogPost) {
 				// Assign variables to document
 				putUpdateBlogPost(blogPost, req.body);
@@ -109,7 +121,7 @@ router.put('/:id', multer().single('file'), putValidation, (req, res, next) => {
 					.then(() => {
 						res.status(204).send();
 					})
-					.catch(err =>
+					.catch((err) =>
 						res.status(400).json(formatMongooseError(err)),
 					);
 				return;
@@ -132,12 +144,12 @@ router.put('/:id', multer().single('file'), putValidation, (req, res, next) => {
 					.then(() => {
 						res.status(201).json({ id: newBlogPost._id });
 					})
-					.catch(err =>
+					.catch((err) =>
 						res.status(400).json(formatMongooseError(err)),
 					);
 			}
 		})
-		.catch(err => res.status(400).json(formatMongooseError(err)));
+		.catch((err) => res.status(400).json(formatMongooseError(err)));
 });
 
 // PATCH api/blog-posts/id
@@ -148,7 +160,7 @@ router.patch(
 	patchValidation,
 	(req, res, next) => {
 		BlogPost.findById(req.params.id)
-			.then(async blogPost => {
+			.then(async (blogPost) => {
 				if (blogPost) {
 					mapBlogPostKeys(req.body, blogPost);
 
@@ -181,7 +193,7 @@ router.patch(
 						.then(() => {
 							res.status(200).json(blogPost);
 						})
-						.catch(err =>
+						.catch((err) =>
 							res.status(400).json(formatMongooseError(err)),
 						);
 				} else {
@@ -190,7 +202,7 @@ router.patch(
 					});
 				}
 			})
-			.catch(err => res.status(400).json(formatMongooseError(err)));
+			.catch((err) => res.status(400).json(formatMongooseError(err)));
 	},
 );
 

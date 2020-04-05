@@ -5,6 +5,7 @@ const {
 	putUpdatePageContent,
 	putNewPageContent,
 	patchPageContent,
+	handlePageContentImageDeletion,
 } = require('./service');
 const {
 	postValidation,
@@ -20,19 +21,19 @@ const { uploadImagePromise } = require('../../services/googleCloud');
 router.get('/', (req, res) => {
 	const query = req.query.id ? { _id: req.query.id } : req.query;
 	PageContent.find(query)
-		.then(content => res.json({ pageContent: content }))
-		.catch(err => res.status(400).json(formatMongooseError(err)));
+		.then((content) => res.json({ pageContent: content }))
+		.catch((err) => res.status(400).json(formatMongooseError(err)));
 });
 
 // GET api/page-content/id
 // Get page content by given page content id
 router.get('/:id', (req, res) => {
 	PageContent.findById(req.params.id)
-		.then(content => {
+		.then((content) => {
 			if (content) res.json({ pageContent: content });
 			else res.status(404).json('Resource not found.');
 		})
-		.catch(err => res.status(400).json(formatMongooseError(err)));
+		.catch((err) => res.status(400).json(formatMongooseError(err)));
 });
 
 // POST api/page-content
@@ -50,7 +51,7 @@ router.post(
 			newPageContent
 				.save()
 				.then(() => res.status(201).json({ id: newPageContent._id }))
-				.catch(err => res.status(400).json(formatMongooseError(err)));
+				.catch((err) => res.status(400).json(formatMongooseError(err)));
 		} else {
 			const imageUrl = await uploadImagePromise(req.file, next);
 			const newPageContent = new PageContent({
@@ -64,7 +65,7 @@ router.post(
 			newPageContent
 				.save()
 				.then(() => res.status(201).json({ id: newPageContent._id }))
-				.catch(err => res.status(400).json(formatMongooseError(err)));
+				.catch((err) => res.status(400).json(formatMongooseError(err)));
 		}
 	},
 );
@@ -80,7 +81,7 @@ router.put(
 		const uploadingNewImage =
 			req.body.content.image && req.file ? true : false;
 
-		PageContent.findById(req.params.id).then(async pageContent => {
+		PageContent.findById(req.params.id).then(async (pageContent) => {
 			if (pageContent) {
 				const result = await putUpdatePageContent(
 					pageContent,
@@ -99,7 +100,7 @@ router.put(
 					.then(() => {
 						res.status(204).send();
 					})
-					.catch(err =>
+					.catch((err) =>
 						res.status(400).json(formatMongooseError(err)),
 					);
 				return;
@@ -111,7 +112,7 @@ router.put(
 					.then(() => {
 						res.status(201).json({ id: newPageContent._id });
 					})
-					.catch(err =>
+					.catch((err) =>
 						res.status(400).json(formatMongooseError(err)),
 					);
 			}
@@ -129,7 +130,7 @@ router.patch(
 		req.body.content.image = req.body.content.image == 'true'; // Parse JSON boolean
 
 		PageContent.findById(req.params.id)
-			.then(async pageContent => {
+			.then(async (pageContent) => {
 				if (pageContent) {
 					const result = await patchPageContent(
 						req,
@@ -148,26 +149,37 @@ router.patch(
 							res.status(200).json(pageContent);
 							return;
 						})
-						.catch(err => {
+						.catch((err) => {
 							res.status(400).json(formatMongooseError(err));
 							return;
 						});
 				} else {
-					res.status(400).json({
+					res.status(404).json({
 						error: 'Resource could not be found',
 					});
 				}
 			})
-			.catch(err => res.status(400).json(formatMongooseError(err)));
+			.catch((err) => res.status(400).json(formatMongooseError(err)));
 	},
 );
 
 // DELETE api/page-content/id
 // Delete page content by given id
 router.delete('/:id', (req, res) => {
-	PageContent.findByIdAndDelete(req.params.id)
-		.then(() => res.status(204).send())
-		.catch(err => res.status(400).json(formatMongooseError(err)));
+	PageContent.findById(req.params.id)
+		.then(async (pageContent) => {
+			const result = await handlePageContentImageDeletion(pageContent);
+
+			if (result === false) {
+				res.status(400).json({ error: 'Error deleting file.' });
+				return;
+			}
+
+			PageContent.findByIdAndDelete(req.params.id)
+				.then(() => res.status(204).send())
+				.catch((err) => res.status(400).json(formatMongooseError(err)));
+		})
+		.catch((err) => res.status(400).json(formatMongooseError(err)));
 });
 
 module.exports = router;

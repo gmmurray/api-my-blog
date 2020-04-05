@@ -1,7 +1,7 @@
 const PageContent = require('../../models/PageContent');
 const {
 	uploadImagePromise,
-	deleteImage,
+	deleteImageByUrl,
 } = require('../../services/googleCloud');
 const { getLastSegmentOfUrl } = require('../../util/stringHelpers');
 
@@ -16,9 +16,8 @@ const putUpdatePageContent = async (
 
 	if (uploadingNewImage) {
 		const newImageUrl = await uploadImagePromise(req.file, next);
-		const error = await deleteImage(
-			getLastSegmentOfUrl(pageContent.content.text),
-		);
+
+		const error = await deleteImageByUrl(pageContent.content.text);
 
 		if (error && error.errors[0].reason !== 'notFound') return false;
 
@@ -28,9 +27,7 @@ const putUpdatePageContent = async (
 		pageContent.content.text = newImageUrl;
 	} else {
 		if (!content.image) {
-			const error = await deleteImage(
-				getLastSegmentOfUrl(pageContent.content.text),
-			);
+			const error = await deleteImageByUrl(pageContent.content.text);
 
 			if (error && error.errors[0].reason !== 'notFound') return false;
 
@@ -64,16 +61,12 @@ const patchPageContent = async (req, next, originalPageContent) => {
 	if (updatedPageContent.content.image) {
 		// Replacing the image for the content
 		newImageUrl = await uploadImagePromise(req.file, next);
-		const error = await deleteImage(
-			getLastSegmentOfUrl(originalPageContent.content.text),
-		);
+		const error = await deleteImageByUrl(pageContent.content.text);
 
 		if (error && error.errors[0].reason !== 'notFound') return false;
 	} else if (updatedPageContent.content.image === false) {
 		// Simply removing image
-		const error = await deleteImage(
-			getLastSegmentOfUrl(originalPageContent.content.text),
-		);
+		const error = await deleteImageByUrl(pageContent.content.text);
 
 		if (error && error.errors[0].reason !== 'notFound') return false;
 	}
@@ -83,7 +76,10 @@ const patchPageContent = async (req, next, originalPageContent) => {
 			switch (key) {
 				case 'content': {
 					for (let nested in updatedPageContent[key]) {
-						if (nested === 'text' && !updatedPageContent[key]['image']) {
+						if (
+							nested === 'text' &&
+							!updatedPageContent[key]['image']
+						) {
 							originalPageContent[key][nested] =
 								updatedPageContent[key][nested];
 							break;
@@ -105,8 +101,17 @@ const patchPageContent = async (req, next, originalPageContent) => {
 	}
 };
 
+const handlePageContentImageDeletion = async (pageContent) => {
+	if (pageContent.content.image) {
+		const error = await deleteImageByUrl(pageContent.content.text);
+
+		if (error && error.errors[0].reason !== 'notFound') return false;
+	}
+};
+
 module.exports = {
 	putUpdatePageContent,
 	putNewPageContent,
 	patchPageContent,
+	handlePageContentImageDeletion,
 };
