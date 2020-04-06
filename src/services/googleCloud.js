@@ -31,6 +31,22 @@ const uploadImagePromise = (file, next) => {
 	});
 };
 
+const listImages = async () => {
+	const storage = new Storage();
+	const bucket = storage.bucket(process.env.GCLOUD_STORAGE_BUCKET);
+
+	const [files] = await bucket.getFiles();
+
+	let formattedFiles = [];
+	files.forEach((file) => {
+		formattedFiles.push({
+			name: file.name,
+			url: `https://storage.googleapis.com/${bucket.name}/${file.name}`,
+		});
+	});
+	return formattedFiles;
+};
+
 const deleteImage = async (fileName) => {
 	const storage = new Storage();
 	const bucket = storage.bucket(process.env.GCLOUD_STORAGE_BUCKET);
@@ -49,3 +65,4 @@ const deleteImageByUrl = async (url) => {
 module.exports.uploadImagePromise = uploadImagePromise;
 module.exports.deleteImage = deleteImage;
 module.exports.deleteImageByUrl = deleteImageByUrl;
+module.exports.listImages = listImages;
