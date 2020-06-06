@@ -10,7 +10,7 @@ const { authenticateToken } = require('../../services/authenticate');
 
 // GET api/users/id
 // Gets a specific user by their id
-router.get('/:id', (req, res) => {
+router.get('/:id', authenticateToken, (req, res) => {
 	User.findById(req.params.id)
 		.then(user => {
 			if (user) {

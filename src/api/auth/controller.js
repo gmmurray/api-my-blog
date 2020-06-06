@@ -5,85 +5,62 @@ const jwt = require('jsonwebtoken');
 const User = require('../../models/User');
 const { postValidation } = require('./validation');
 const { formatMongooseError } = require('../../services/errorResponses');
-const tokenSecret = process.env.JWT_SECRET;
+const {
+	authenticateRefreshToken,
+	getNewToken,
+} = require('../../services/authenticate');
+const tokenTypes = require('../../constants/tokenTypes');
 
 // POST api/auth/login
+// Log a user in, returning a 30m access token and a 1d refresh token.
 router.post('/login', postValidation, (req, res) => {
 	const { email, password } = req.body;
 	User.findOne({ email })
 		.then(async user => {
 			if (user && (await bcrypt.compare(password, user.password))) {
-				const accessToken = jwt.sign(
-					{ email: user.email, name: user.name },
-					tokenSecret,
-				);
+				let accessToken, refreshToken;
+				try {
+					accessToken = getNewToken(
+						tokenTypes.ACCESS,
+						{ email: user.email, name: user.name },
+						'30m',
+					);
+					refreshToken = getNewToken(
+						tokenTypes.REFRESH,
+						{ email: user.email, name: user.name },
+						'1d',
+					);
+				} catch (error) {
+					return res.status(400).json({ error });
+				}
+
 				res.status(201).json({
 					accessToken,
+					refreshToken,
 				});
 			} else
 				res.status(400).json({ error: 'Could not authenticate user' });
 		})
 		.catch(err => res.status(400).json(formatMongooseError(err)));
 });
-// const { registerValidation, loginValidation } = require('../validation/users');
 
-// Register
-// router.post('/register', async (req, res) => {
-// 	// Validate data
-// 	const error = await registerValidation(req.body);
-// 	if (error) {
-// 		return res.status(400).json(error);
-// 	}
+// POST api/auth/token
+// Use a refresh token from header to get a new 30m access token
+router.post('/token', authenticateRefreshToken, (req, res) => {
+	let accessToken;
+	try {
+		accessToken = getNewToken(
+			tokenTypes.ACCESS,
+			{ email: req.user.email, name: req.user.name },
+			'30m',
+		);
+	} catch (error) {
+		return res.status(400).json({ error });
+	}
 
-// 	// Check if email already exists
-// 	if (await User.findOne({ email: req.body.email })) {
-// 		return res.status(400).json('Email already exists');
-// 	}
-
-// Hash password
-// const salt = await bcrypt.genSalt(10);
-// const hashPassword = await bcrypt.hash(req.body.password, salt);
-
-// 	const newUser = new User({
-// 		name: req.body.name,
-// 		email: req.body.email,
-// 		username: req.body.username,
-// 		avatar: req.body.avatar,
-// 		bio: req.body.bio,
-// 		password: hashPassword,
-// 	});
-
-// 	try {
-// 		const savedUser = await newUser.save();
-// 		res.status(200).json({ user: savedUser._id });
-// 	} catch (err) {}
-// });
-
-// // Login
-// router.post('/login', async (req, res) => {
-// 	// Validate
-// 	const error = await loginValidation(req.body);
-// 	if (error) {
-// 		return res.status(400).json(error);
-// 	}
-
-// 	// Find user
-// 	const user = await User.findOne({ email: req.body.email });
-// 	if (!user) {
-// 		return res.status(400).json('Invalid login attempt');
-// 	}
-
-// 	// Check password
-// 	const validPass = await bcrypt.compare(req.body.password, user.password);
-// 	if (!validPass) {
-// 		return res.status(400).send('Invalid login attempt');
-//     }
-
-//     // Create and assign a JWT
-//     const token = jwt.sign({_id: user.__id}, process.env.TOKEN_SECRET);
-//     res.header('auth-token', token).send(token);
-// });
-router.get('/', (req, res) => {
-	res.status(200).send('Auth route');
+	res.status(201).json({
+		accessToken,
+	});
 });
+
 module.exports = router;
