@@ -5,9 +5,7 @@ const { formatMiddlewareValidation } = require('../../services/errorResponses');
 const postValidation = async (req, res, next) => {
 	const schema = Joi.object({
 		title: Joi.string().required(),
-		section: Joi.string()
-			.max(16)
-			.required(),
+		section: Joi.string().max(16).required(),
 		content: {
 			image: Joi.boolean().required(),
 			text: Joi.string().max(10000),
@@ -40,9 +38,7 @@ const postValidation = async (req, res, next) => {
 const putValidation = async (req, res, next) => {
 	const schema = Joi.object({
 		title: Joi.string().required(),
-		section: Joi.string()
-			.max(16)
-			.required(),
+		section: Joi.string().max(16).required(),
 		content: {
 			image: Joi.boolean().required(),
 			text: Joi.string().max(10000),
@@ -77,8 +73,7 @@ const putValidation = async (req, res, next) => {
 const patchValidation = async (req, res, next) => {
 	const schema = Joi.object({
 		title: Joi.string(),
-		section: Joi.string()
-			.max(16),
+		section: Joi.string().max(16),
 		content: {
 			image: Joi.boolean(),
 			text: Joi.string().max(10000),
@@ -93,7 +88,9 @@ const patchValidation = async (req, res, next) => {
 	}
 
 	if (req.body.content.image == 'true' && !req.file) {
-		res.status(400).json({error: 'Image content change indicated but no file uploaded'});
+		res.status(400).json({
+			error: 'Image content change indicated but no file uploaded',
+		});
 		return;
 	}
 

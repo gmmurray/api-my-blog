@@ -8,7 +8,7 @@ const uploadImage = (file, next, callback) => {
 	const bucket = storage.bucket(process.env.GCLOUD_STORAGE_BUCKET);
 	const blob = bucket.file(file.originalname);
 	const blobStream = blob.createWriteStream();
-	blobStream.on('error', (err) => {
+	blobStream.on('error', err => {
 		next(err);
 	});
 
@@ -25,7 +25,7 @@ const uploadImage = (file, next, callback) => {
 
 const uploadImagePromise = (file, next) => {
 	return new Promise((resolve, reject) => {
-		uploadImage(file, next, (url) => {
+		uploadImage(file, next, url => {
 			resolve(url);
 		});
 	});
@@ -38,7 +38,7 @@ const listImages = async () => {
 	const [files] = await bucket.getFiles();
 
 	let formattedFiles = [];
-	files.forEach((file) => {
+	files.forEach(file => {
 		formattedFiles.push({
 			name: file.name,
 			url: `https://storage.googleapis.com/${bucket.name}/${file.name}`,
@@ -47,7 +47,7 @@ const listImages = async () => {
 	return formattedFiles;
 };
 
-const deleteImage = async (fileName) => {
+const deleteImage = async fileName => {
 	const storage = new Storage();
 	const bucket = storage.bucket(process.env.GCLOUD_STORAGE_BUCKET);
 	try {
@@ -58,7 +58,7 @@ const deleteImage = async (fileName) => {
 	}
 };
 
-const deleteImageByUrl = async (url) => {
+const deleteImageByUrl = async url => {
 	return await deleteImage(getLastSegmentOfUrl(url));
 };
 

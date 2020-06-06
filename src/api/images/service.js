@@ -20,7 +20,7 @@ const imageIsUsedInMongo = async (model, queryObject) => {
 const findAllImages = async () => {
 	const allImages = await getAllImages();
 
-	const result = allImages.map(async (thisUrl) => {
+	const result = allImages.map(async thisUrl => {
 		let usedInBlog = await imageIsUsedInMongo(BlogPost, {
 			'image.url': thisUrl.url,
 		});
@@ -46,14 +46,14 @@ const findAllImages = async () => {
 
 const findUsedImages = async () => {
 	const images = await findAllImages();
-	const result = images.filter((i) => i.isUsed === true);
+	const result = images.filter(i => i.isUsed === true);
 	return result;
 };
 
 const findImageByProperty = async (property, value, usedOnly = false) => {
 	const images = usedOnly ? await findUsedImages() : await findAllImages();
 
-	return images.filter((i) => i[property] === value);
+	return images.filter(i => i[property] === value);
 };
 
 const handleDeleteImage = async (property, value, safe = true) => {

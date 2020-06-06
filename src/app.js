@@ -5,7 +5,7 @@ require('dotenv').config();
 const startServer = async () => {
 	const app = express();
 
-	await loaders({expressApp: app});
+	await loaders({ expressApp: app });
 
 	app.listen(process.env.PORT, err => {
 		if (err) {
@@ -14,6 +14,6 @@ const startServer = async () => {
 		}
 		console.log('Server is listening...');
 	});
-}
+};
 
 startServer();

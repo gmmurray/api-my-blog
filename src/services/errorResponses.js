@@ -14,12 +14,12 @@ const formatMiddlewareValidation = error => {
 };
 
 const formatMongooseError = error => {
-    return {
-        error: {
-            message: error.message,
-            type: error.name
-        }
-    }
+	return {
+		error: {
+			message: error.message,
+			type: error.name,
+		},
+	};
 };
 
 module.exports.formatMiddlewareValidation = formatMiddlewareValidation;

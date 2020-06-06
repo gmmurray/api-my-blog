@@ -7,4 +7,4 @@ router.use('/page-content', require('./page-content/controller'));
 router.use('/users', require('./users/controller'));
 router.use('/images', require('./images/controller'));
 
-module.exports = router
+module.exports = router;

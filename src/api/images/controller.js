@@ -6,6 +6,8 @@ const {
 	handleDeleteImage,
 } = require('./service');
 
+const { authenticateToken } = require('../../services/authenticate');
+
 // GET api/images/all
 // Gets all uploaded images, or searches by key/value if provided in query string
 router.get('/all', async (req, res) => {
@@ -52,7 +54,7 @@ router.get('/used', async (req, res) => {
 	}
 });
 
-router.delete('/safe', async (req, res) => {
+router.delete('/safe', authenticateToken, async (req, res) => {
 	if (req.query) {
 		try {
 			const key = Object.keys(req.query)[0];
@@ -72,11 +74,15 @@ router.delete('/safe', async (req, res) => {
 	}
 });
 
-router.delete('/any', async (req, res) => {
+router.delete('/any', authenticateToken, async (req, res) => {
 	if (req.query) {
 		try {
 			const key = Object.keys(req.query)[0];
-			const deletionResult = await handleDeleteImage(key, req.query[key], false);
+			const deletionResult = await handleDeleteImage(
+				key,
+				req.query[key],
+				false,
+			);
 
 			if (deletionResult && deletionResult.status === false) {
 				res.status(404).json({ error: deletionResult.error });

@@ -1,8 +1,30 @@
 const router = require('express').Router();
 const bcrypt = require('bcryptjs');
-// const jwt = require('jsonwebtoken');
+const jwt = require('jsonwebtoken');
 
 const User = require('../../models/User');
+const { postValidation } = require('./validation');
+const { formatMongooseError } = require('../../services/errorResponses');
+const tokenSecret = process.env.JWT_SECRET;
+
+// POST api/auth/login
+router.post('/login', postValidation, (req, res) => {
+	const { email, password } = req.body;
+	User.findOne({ email })
+		.then(async user => {
+			if (user && (await bcrypt.compare(password, user.password))) {
+				const accessToken = jwt.sign(
+					{ email: user.email, name: user.name },
+					tokenSecret,
+				);
+				res.status(201).json({
+					accessToken,
+				});
+			} else
+				res.status(400).json({ error: 'Could not authenticate user' });
+		})
+		.catch(err => res.status(400).json(formatMongooseError(err)));
+});
 // const { registerValidation, loginValidation } = require('../validation/users');
 
 // Register
@@ -56,12 +78,12 @@ const User = require('../../models/User');
 // 	if (!validPass) {
 // 		return res.status(400).send('Invalid login attempt');
 //     }
-    
+
 //     // Create and assign a JWT
 //     const token = jwt.sign({_id: user.__id}, process.env.TOKEN_SECRET);
 //     res.header('auth-token', token).send(token);
 // });
 router.get('/', (req, res) => {
 	res.status(200).send('Auth route');
-})
+});
 module.exports = router;

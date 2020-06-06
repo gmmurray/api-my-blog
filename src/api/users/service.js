@@ -44,7 +44,7 @@ const patchUser = async (req, next, originalUser) => {
 	}
 };
 
-const handleUserAvatarDeletion = async (user) => {
+const handleUserAvatarDeletion = async user => {
 	if (user.avatar !== '') {
 		const error = await deleteImageByUrl(user.avatar);
 

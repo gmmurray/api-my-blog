@@ -1,25 +1,17 @@
 const Joi = require('@hapi/joi');
-const {formatMiddlewareValidation} = require('../../services/errorResponses');
+const { formatMiddlewareValidation } = require('../../services/errorResponses');
 
 // Post validation
 const postValidation = async (req, res, next) => {
 	const schema = Joi.object({
 		title: Joi.string().required(),
-		intro: Joi.string()
-			.max(155)
-			.required(),
-		content: Joi.string()
-			.max(10000)
-			.required(),
+		intro: Joi.string().max(155).required(),
+		content: Joi.string().max(10000).required(),
 		image: {
 			description: Joi.string().max(160),
-			alt: Joi.string()
-				.max(160)
-				.required(),
+			alt: Joi.string().max(160).required(),
 		},
-		category: Joi.string()
-			.max(16)
-			.required(),
+		category: Joi.string().max(16).required(),
 		published: Joi.boolean().required(),
 		dateCreated: Joi.date(),
 		datePublished: Joi.date(),
@@ -48,23 +40,15 @@ const postValidation = async (req, res, next) => {
 const putValidation = async (req, res, next) => {
 	const schema = Joi.object({
 		title: Joi.string().required(),
-		intro: Joi.string()
-			.max(155)
-			.required(),
-		content: Joi.string()
-			.max(10000)
-			.required(),
+		intro: Joi.string().max(155).required(),
+		content: Joi.string().max(10000).required(),
 		image: {
 			url: Joi.string(),
 			description: Joi.string().max(160),
-			alt: Joi.string()
-				.max(160)
-				.required(),
+			alt: Joi.string().max(160).required(),
 			filename: Joi.string(),
 		},
-		category: Joi.string()
-			.max(16)
-			.required(),
+		category: Joi.string().max(16).required(),
 		published: Joi.boolean().required(),
 		dateCreated: Joi.date().required(),
 		datePublished: Joi.date(),

@@ -6,12 +6,13 @@ const { postValidation, patchValidation } = require('./validation');
 const { patchUser, handleUserAvatarDeletion } = require('./service');
 const multer = require('../../services/multer');
 const { hashPassword } = require('../../services/passwords');
+const { authenticateToken } = require('../../services/authenticate');
 
 // GET api/users/id
 // Gets a specific user by their id
 router.get('/:id', (req, res) => {
 	User.findById(req.params.id)
-		.then((user) => {
+		.then(user => {
 			if (user) {
 				const { _id, name, email, avatar, lastLogin, bio } = user;
 				res.status(200).json({
@@ -26,20 +27,20 @@ router.get('/:id', (req, res) => {
 				});
 			} else res.status(404).json('Resource not found');
 		})
-		.catch((err) => res.status(400).json(formatMongooseError(err)));
+		.catch(err => res.status(400).json(formatMongooseError(err)));
 });
 
 // GET api/users
 // Gets all users and returns less sensitive data
 router.get('/', (req, res) => {
 	User.find({}, 'avatar _id name email bio lastLogin')
-		.then((users) => res.status(200).json({ users }))
-		.catch((err) => res.status(400).json(formatMongooseError(err)));
+		.then(users => res.status(200).json({ users }))
+		.catch(err => res.status(400).json(formatMongooseError(err)));
 });
 
 // POST api/users
 // Creates a new user without bio and avatar image
-router.post('/', postValidation, async (req, res) => {
+router.post('/', authenticateToken, postValidation, async (req, res) => {
 	// Unique email?
 	if (await User.findOne({ email: req.body.email })) {
 		return res.status(400).json({ error: 'Email already in use' });
@@ -55,13 +56,14 @@ router.post('/', postValidation, async (req, res) => {
 	newUser
 		.save()
 		.then(() => res.status(201).json({ id: newUser._id }))
-		.catch((err) => res.status(400).json(formatMongooseError(err)));
+		.catch(err => res.status(400).json(formatMongooseError(err)));
 });
 
 // PATCH api/users/id
 // Update properties of a user by given id
 router.patch(
 	'/:id',
+	authenticateToken,
 	multer().single('file'),
 	patchValidation,
 	async (req, res, next) => {
@@ -78,7 +80,7 @@ router.patch(
 		}
 
 		User.findById(req.params.id)
-			.then(async (user) => {
+			.then(async user => {
 				if (user) {
 					const result = await patchUser(req, next, user);
 
@@ -92,7 +94,7 @@ router.patch(
 							res.status(200).json({ user });
 							return;
 						})
-						.catch((err) => {
+						.catch(err => {
 							res.status(400).json(formatMongooseError(err));
 							return;
 						});
@@ -102,15 +104,15 @@ router.patch(
 					});
 				}
 			})
-			.catch((err) => res.status(400).json(formatMongooseError(err)));
+			.catch(err => res.status(400).json(formatMongooseError(err)));
 	},
 );
 
 // DELETE api/users/id
 // Deletes a user and their corresponding avatar image
-router.delete('/:id', (req, res) => {
+router.delete('/:id', authenticateToken, (req, res) => {
 	User.findById(req.params.id)
-		.then(async (user) => {
+		.then(async user => {
 			const result = await handleUserAvatarDeletion(user);
 
 			if (result === false) {
@@ -120,9 +122,9 @@ router.delete('/:id', (req, res) => {
 
 			User.findByIdAndDelete(req.params.id)
 				.then(() => res.status(204).send())
-				.catch((err) => res.status(400).json(formatMongooseError(err)));
+				.catch(err => res.status(400).json(formatMongooseError(err)));
 		})
-		.catch((err) => res.status(400).json(formatMongooseError(err)));
+		.catch(err => res.status(400).json(formatMongooseError(err)));
 });
 
 module.exports = router;

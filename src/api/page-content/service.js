@@ -101,7 +101,7 @@ const patchPageContent = async (req, next, originalPageContent) => {
 	}
 };
 
-const handlePageContentImageDeletion = async (pageContent) => {
+const handlePageContentImageDeletion = async pageContent => {
 	if (pageContent.content.image) {
 		const error = await deleteImageByUrl(pageContent.content.text);
 

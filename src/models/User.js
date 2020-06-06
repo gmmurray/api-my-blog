@@ -23,11 +23,11 @@ const userSchema = new mongoose.Schema({
 	lastLogin: {
 		type: Date,
 		default: Date.now,
-    },
-    bio: {
-        type: String,
-        max: 160,
-    },
+	},
+	bio: {
+		type: String,
+		max: 160,
+	},
 });
 
 module.exports = mongoose.model('User', userSchema);
